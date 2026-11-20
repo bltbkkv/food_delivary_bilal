@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Онлайн-заказы</title>
+<meta name="viewport" content="width=1024, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #1f1f1f; }
+  button { font: inherit; cursor: pointer; border: 0; }
+  .topbar { background: #1f1f1f; color: #fff; padding: 8px 16px; display: flex; align-items: center; gap: 16px; min-height: 52px; }
+  .topbar .brand { font-size: 20px; font-weight: bold; }
+  .topbar a { color: #fff; font-weight: bold; text-decoration: none; }
+  .topbar a:hover { color: #ffc107; }
+  .topbar .sp { flex: 1; }
+  .conn { font-size: 14px; color: #bbb; }
+  .conn.bad { color: #ff8a80; font-weight: bold; }
+  .pause { background: #444; color: #fff; padding: 8px 14px; border-radius: 8px; font-weight: bold; }
+  .pause.on { background: #dc3545; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 10px; height: calc(100vh - 52px); }
+  .col { background: #e4e7eb; border-radius: 10px; padding: 8px; overflow-y: auto; }
+  .col h2 { margin: 2px 4px 8px; font-size: 18px; display: flex; justify-content: space-between; }
+  .col h2 span { background: #1f1f1f; color: #fff; border-radius: 12px; padding: 0 10px; font-size: 15px; }
+  .o { background: #fff; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.12);
+    border-left: 6px solid #28a745; }
+  .o.new { border-left-color: #dc3545; animation: blink 1.2s infinite alternate; }
+  @keyframes blink { from { box-shadow: 0 0 0 0 rgba(220,53,69,.0); } to { box-shadow: 0 0 0 4px rgba(220,53,69,.35); } }
+  .o.delivery { border-left-color: #ffc107; }
+  .o .h { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+  .o .h b { font-size: 18px; }
+  .o .t { color: #666; font-size: 13px; white-space: nowrap; }
+  .who { font-size: 16px; font-weight: 600; margin-top: 4px; }
+  .who a { color: #0d6efd; text-decoration: none; }
+  .addr { font-size: 14px; margin-top: 4px; }
+  .addr a { color: #0d6efd; }
+  .note { font-size: 14px; background: #fff8e1; border-radius: 6px; padding: 4px 8px; margin-top: 6px; }
+  .items { margin: 8px 0 4px; font-size: 15px; }
+  .items div { display: flex; justify-content: space-between; padding: 2px 0; }
+  .sum { display: flex; justify-content: space-between; font-weight: bold; font-size: 17px; border-top: 1px solid #eee; padding-top: 6px; }
+  .small { font-size: 13px; color: #666; }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .tag { font-size: 12px; font-weight: bold; padding: 3px 8px; border-radius: 6px; background: #eee; }
+  .tag.red { background: #f8d7da; color: #b02a37; } .tag.green { background: #d1e7dd; color: #146c43; } .tag.yellow { background: #fff3cd; color: #997404; }
+  .call { background: #fff3cd; border-radius: 8px; padding: 8px; margin-top: 8px; font-weight: bold; color: #7a5b00; }
+  .btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .btns button { flex: 1; min-width: 90px; padding: 10px 8px; border-radius: 8px; font-weight: bold; font-size: 15px; background: #e9ecef; }
+  .btns .ok { background: #28a745; color: #fff; } .btns .no { background: #f8d7da; color: #b02a37; }
+  .btns .warn { background: #ffc107; } .btns .blue { background: #0d6efd; color: #fff; }
+  .btns button:disabled { opacity: .45; }
+  .empty { color: #888; text-align: center; padding: 30px 0; }
+  .setup { max-width: 640px; margin: 40px auto; background: #fff; border-radius: 12px; padding: 24px; font-size: 16px; }
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; z-index: 50; }
+  .modal { background: #fff; border-radius: 12px; padding: 20px; width: 520px; max-width: 95vw; }
+  .modal h3 { margin: 0 0 12px; }
+  .modal .r { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .modal .r button { padding: 14px; border-radius: 8px; background: #e9ecef; font-weight: bold; font-size: 15px; }
+  .modal img { max-width: 100%; max-height: 70vh; display: block; margin: 0 auto; }
+  .toast { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); background: #1f1f1f; color: #fff; padding: 12px 18px;
+    border-radius: 10px; font-weight: bold; z-index: 60; }
+  .toast.err { background: #dc3545; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🌐 Онлайн-заказы</span>
+  <a href="/menu/">← Касса</a><a href="/orders/">Заказы</a>
+  <span class="sp"></span>
+  <span class="conn" id="conn">Подключение…</span>
+  <button class="pause" id="pause" hidden></button>
+</div>
+{% if not configured %}
+<div class="setup"><h2>Онлайн-заказы не подключены</h2>
+  <p>Положите файл <b>online.json</b> рядом с manage.py. Его содержимое — в админке сайта:
+  «Филиалы» → ваш филиал → «Подключение кассы». Потом обновите эту страницу.</p></div>
+{% else %}
+<div class="cols">
+  <div class="col"><h2>Новые <span id="n-new">0</span></h2><div id="c-new"></div></div>
+  <div class="col"><h2>Готовятся <span id="n-acc">0</span></h2><div id="c-acc"></div></div>
+  <div class="col"><h2>Готовы / в пути <span id="n-rdy">0</span></h2><div id="c-rdy"></div></div>
+</div>
+{% endif %}
+<script>
+"use strict";
+const CONFIGURED = {{ configured|yesno:"true,false" }};
+let ORDERS = [], SITE = "", BRANCH = null, beepAt = 0;
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const money = n => Math.round(n).toLocaleString("ru-RU").replace(/,/g, " ") + " с";
+const KIND = { delivery: "🛵 Доставка", pickup: "🥡 Самовывоз", table: "🍽 Стол" };
+function toast(t, err) { const d = document.createElement("div"); d.className = "toast" + (err ? " err" : ""); d.textContent = t;
+  document.body.appendChild(d); setTimeout(() => d.remove(), err ? 4500 : 2000); }
+function ago(iso) {
+  const m = Math.max(0, Math.round((Date.now() - new Date(iso + "+06:00").getTime()) / 60000));
+  return m < 1 ? "только что" : m < 60 ? m + " мин назад" : iso.slice(11, 16);
+}
+let audio;
+function beep() {
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    if (audio.state === "suspended") audio.resume();
+    [0, .25, .5].forEach((t, i) => {
+      const o = audio.createOscillator(), g = audio.createGain();
+      o.frequency.value = i === 1 ? 1175 : 880; o.connect(g); g.connect(audio.destination);
+      g.gain.setValueAtTime(.0001, audio.currentTime + t); g.gain.exponentialRampToValueAtTime(.5, audio.currentTime + t + .02);
+      g.gain.exponentialRampToValueAtTime(.0001, audio.currentTime + t + .22);
+      o.start(audio.currentTime + t); o.stop(audio.currentTime + t + .24);
+    });
+  } catch (e) {}
+}
+document.addEventListener("click", () => { try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); } catch (e) {} }, { once: true });
+
+async function post(url, body) {
+  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+  const d = await r.json().catch(() => ({ ok: false, error: "Касса не ответила" }));
+  if (!d.ok) throw new Error(d.error || "Ошибка");
+  return d;
+}
+async function poll() {
+  try {
+    const r = await fetch("/online/poll/"); const d = await r.json();
+    ORDERS = d.orders || []; SITE = d.site || SITE; BRANCH = d.branch || BRANCH;
+    const conn = document.getElementById("conn");
+    conn.textContent = d.ok ? `🟢 ${BRANCH?.name || ""} на связи` : "🔴 " + (d.error || "нет связи");
+    conn.className = "conn" + (d.ok ? "" : " bad");
+    const p = document.getElementById("pause");
+    if (BRANCH) { p.hidden = false; p.className = "pause" + (BRANCH.paused ? " on" : "");
+      p.textContent = BRANCH.paused ? "⏸ Онлайн на паузе — включить" : "⏸ Пауза онлайн-заказов"; }
+    draw();
+    if (ORDERS.some(o => o.status === "new") && Date.now() - beepAt > 4500) { beepAt = Date.now(); beep(); }
+  } catch (e) { document.getElementById("conn").textContent = "🔴 касса не отвечает"; }
+}
+function card(o) {
+  const map = o.lat && o.lon ? ` <a href="https://2gis.kg/bishkek/geo/${o.lon},${o.lat}" target="_blank">карта</a>` : "";
+  const pay = o.pay === "transfer"
+    ? (o.paid ? `<span class="tag green">✅ Оплачен переводом</span>` : o.has_check ? `<span class="tag yellow">Чек прикреплён — проверьте</span>`
+      : `<span class="tag red">Перевод: чека нет</span>`)
+    : `<span class="tag">${o.kind === "table" ? "Оплата на кассе" : "Оплата при получении"}</span>`;
+  const extra = [];
+  if (o.orders_before === 0) extra.push(`<span class="tag yellow">Новый клиент</span>`);
+  else if (o.orders_before) extra.push(`<span class="tag">${o.orders_before}-й заказ</span>`);
+  if (o.no_show) extra.push(`<span class="tag red">Не забирал: ${o.no_show}</span>`);
+  if (o.want_time) extra.push(`<span class="tag yellow">🕐 ${esc(o.want_time)}</span>`);
+  let btns = "";
+  if (o.status === "new") {
+    btns = (o.need_call && !o.called ? `<div class="call">📞 Большой заказ — позвоните клиенту: ${esc(o.phone)}</div>` : "") +
+      `<div class="btns">${o.need_call && !o.called ? `<button class="warn" data-a="called" data-id="${o.id}">📞 Позвонил</button>` : ""}
+      <button class="ok" data-a="accept" data-id="${o.id}" ${o.need_call && !o.called ? "disabled" : ""}>✅ Принять</button>
+      <button class="no" data-a="reject" data-id="${o.id}">Отклонить</button></div>`;
+  } else if (o.status === "accepted" || o.status === "ready") {
+    btns = `<div class="btns">${o.status === "accepted" ? `<button class="blue" data-a="ready" data-id="${o.id}">${o.kind === "delivery" ? "🛵 Отдан курьеру" : "🔔 Готов"}</button>` : ""}
+      <button class="ok" data-a="done" data-id="${o.id}">Выдан</button>
+      <button class="no" data-a="no_show" data-id="${o.id}">Не забрал</button></div>`;
+  }
+  if (o.pay === "transfer" && ["new", "accepted", "ready"].includes(o.status)) {
+    btns += `<div class="btns">${o.check_url ? `<button data-check="${o.id}">🧾 Чек</button>` : ""}
+      <button class="${o.paid ? "" : "ok"}" data-a="paid" data-id="${o.id}" ${o.paid ? 'data-undo="1"' : ""}>${o.paid ? "Отменить «оплачен»" : "💰 Деньги пришли"}</button></div>`;
+  }
+  return `<div class="o ${o.status === "new" ? "new" : ""} ${o.kind === "delivery" ? "delivery" : ""}">
+    <div class="h"><b>${KIND[o.kind]}${o.table_no ? " " + esc(o.table_no) : ""}${o.number ? ` · №${o.number}` : ""}</b><span class="t">${ago(o.created)}</span></div>
+    ${o.name || o.phone ? `<div class="who">${esc(o.name)} ${o.phone ? `<a href="tel:${esc(o.phone_raw)}">${esc(o.phone)}</a>` : ""}</div>` : ""}
+    ${o.address ? `<div class="addr">📍 ${esc(o.address)}${map}</div>` : ""}
+    ${o.comment ? `<div class="note">💬 ${esc(o.comment)}</div>` : ""}
+    <div class="items">${o.items.map(i => `<div><span>${esc(i.name)} × ${i.qty}</span><span>${money(i.price * i.qty)}</span></div>`).join("")}</div>
+    ${o.bonus_spent ? `<div class="small">Бонусами −${money(o.bonus_spent)}</div>` : ""}
+    ${o.delivery_fee ? `<div class="small">Доставка +${money(o.delivery_fee)}</div>` : ""}
+    <div class="sum"><span>К оплате</span><span>${money(o.total)}</span></div>
+    <div class="tags">${pay}${extra.join("")}</div>${btns}</div>`;
+}
+function draw() {
+  if (!CONFIGURED) return;
+  const g = { new: [], acc: [], rdy: [] };
+  ORDERS.forEach(o => { if (o.status === "new") g.new.push(o); else if (o.status === "accepted") g.acc.push(o); else if (o.status === "ready") g.rdy.push(o); });
+  for (const k in g) {
+    document.getElementById("n-" + k).textContent = g[k].length;
+    document.getElementById("c-" + k).innerHTML = g[k].map(card).join("") || `<div class="empty">—</div>`;
+  }
+}
+function modal(html) {
+  const bg = document.createElement("div"); bg.className = "modal-bg"; bg.innerHTML = `<div class="modal">${html}</div>`;
+  bg.onclick = e => { if (e.target === bg) bg.remove(); }; document.body.appendChild(bg); return bg;
+}
+const REASONS = ["Нет в наличии", "Не успеваем", "Не дозвонились", "Адрес вне зоны доставки", "Филиал закрывается", "Другое"];
+function askReason() {
+  return new Promise(ok => {
+    const m = modal(`<h3>Причина отказа (клиент её увидит)</h3><div class="r">${REASONS.map(r => `<button data-r="${r}">${r}</button>`).join("")}</div>
+      <div class="btns"><button data-r="">Отмена</button></div>`);
+    m.querySelectorAll("[data-r]").forEach(b => b.onclick = () => {
+      let r = b.dataset.r; m.remove();
+      if (r === "Другое") r = prompt("Причина:") || "";
+      ok(r || null);
+    });
+  });
+}
+async function act(el) {
+  const id = +el.dataset.id, a = el.dataset.a, body = { action: a };
+  if (a === "reject") { const r = await askReason(); if (!r) return; body.reason = r; }
+  if (a === "no_show" && !confirm("Клиент не забрал заказ? После 2 раз ему будет доступна только предоплата.")) return;
+  if (el.dataset.undo) body.undo = 1;
+  el.disabled = true;
+  try {
+    const d = await post(`/online/${id}/action/`, body);
+    ORDERS = ORDERS.map(o => o.id === id ? d.order : o); draw();
+    toast(a === "accept" ? `Принят — №${d.order.number || ""}` : "Готово");
+  } catch (e) { toast(e.message, true); el.disabled = false; }
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-a]"); if (b) return act(b);
+  const c = e.target.closest("[data-check]");
+  if (c) { const o = ORDERS.find(x => x.id === +c.dataset.check); modal(`<h3>Чек перевода · ${money(o.total)}</h3><img src="${esc(SITE + o.check_url)}" alt="">
+    <p class="small">Проверьте поступление в банковском приложении, потом нажмите «Деньги пришли».</p>`); }
+});
+document.getElementById("pause").onclick = async () => {
+  try { await post("/online/pause/", { paused: !BRANCH.paused }); BRANCH.paused = !BRANCH.paused; poll(); }
+  catch (e) { toast(e.message, true); }
+};
+if (CONFIGURED) { poll(); setInterval(poll, 4000); setInterval(draw, 30000); }
+</script>
+</body>
+</html>

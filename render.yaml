@@ -1,0 +1,25 @@
+# Render (render.com): New → Blueprint → выбрать этот репозиторий.
+# Сайт онлайн-заказов + админка владельца + связь с кассами филиалов. Отдельный сервис.
+services:
+  - type: web
+    name: bilal-online
+    runtime: python
+    plan: 0.5c-512mb         # платный Starter (~$7/мес): не засыпает, есть диск. Бесплатный теряет данные
+    region: frankfurt        # ближайший к Бишкеку регион Render
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m app.main
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    disk:
+      name: data
+      mountPath: /var/data   # база заказов, фото блюд, чеки переводов; Render копирует диск каждые сутки
+      sizeGB: 1
+    envVars:
+      - key: ADMIN_PASSWORD
+        sync: false          # пароль владельца для /admin — придумайте сами
+      - key: SECRET
+        generateValue: true  # подпись ссылок на чеки — Render придумает сам
+      - key: DATA_DIR
+        value: /var/data
+      - key: PYTHON_VERSION
+        value: "3.12.7"

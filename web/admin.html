@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Bilal — управление</title>
+<link rel="icon" href="/icon.svg">
+<style>
+:root { --bg: #f4f1eb; --card: #fff; --ink: #1c1a17; --muted: #7a7166; --line: #e7dfd2; --gold: #c8962e;
+  --green: #1f7a5a; --green-soft: #e3f2ec; --red: #c4432f; --red-soft: #fbe7e3; --dark: #1c1a17; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 -apple-system, "Segoe UI", Roboto, sans-serif; }
+button { font: inherit; cursor: pointer; }
+header { background: var(--dark); color: #fff; padding: 12px 16px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+header b { color: var(--gold); font-size: 18px; }
+nav { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; }
+nav button { background: none; border: 0; color: #cfc5b6; padding: 8px 12px; border-radius: 10px; font-weight: 600; }
+nav button.on { background: rgba(255, 255, 255, .12); color: #fff; }
+main { max-width: 980px; margin: 0 auto; padding: 16px; }
+.card { background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 6px rgba(0, 0, 0, .05); }
+.card h3 { margin: 0 0 12px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.kpi { background: var(--bg); border-radius: 12px; padding: 12px; }
+.kpi span { display: block; color: var(--muted); font-size: 13px; }
+.kpi b { font-size: 22px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: top; }
+th { color: var(--muted); font-weight: 600; font-size: 13px; }
+td.r, th.r { text-align: right; }
+.tw { overflow-x: auto; }
+.seg { display: inline-flex; background: var(--bg); border-radius: 10px; padding: 3px; gap: 3px; margin-bottom: 12px; }
+.seg button { border: 0; background: none; padding: 7px 14px; border-radius: 8px; font-weight: 600; color: var(--muted); }
+.seg button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 4px rgba(0, 0, 0, .08); }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 14px; }
+label { display: block; }
+label span { display: block; font-size: 13px; color: var(--muted); margin-bottom: 3px; }
+input, textarea, select { width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 10px; font: inherit; background: #fdfcfa; }
+input[type=checkbox] { width: auto; }
+.chk { display: flex; gap: 8px; align-items: center; margin-top: 22px; }
+.btn { border: 0; border-radius: 10px; padding: 10px 16px; font-weight: 700; background: var(--dark); color: #fff; }
+.btn.g { background: var(--green); } .btn.l { background: var(--bg); color: var(--ink); } .btn.r { background: var(--red-soft); color: var(--red); }
+.acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.badge { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 8px; background: var(--bg); white-space: nowrap; }
+.badge.g { background: var(--green-soft); color: var(--green); } .badge.r { background: var(--red-soft); color: var(--red); }
+.br { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.br:last-child { border-bottom: 0; }
+.br small { display: block; color: var(--muted); }
+code { background: var(--bg); padding: 6px 8px; border-radius: 8px; display: block; word-break: break-all; font-size: 13px; margin-top: 4px; }
+.hint { color: var(--muted); font-size: 13px; }
+.login { max-width: 340px; margin: 12vh auto; }
+.toast { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); background: var(--dark); color: #fff;
+  padding: 10px 16px; border-radius: 10px; z-index: 9; font-weight: 600; }
+.toast.err { background: var(--red); }
+.qrimg { width: 120px; border-radius: 8px; border: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+"use strict";
+const root = document.getElementById("root");
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const money = n => Math.round(n || 0).toLocaleString("ru-RU").replace(/,/g, " ") + " сом";
+let ST = null, TAB = "stats", PER = "day", EDIT = null;
+function toast(t, err) { const d = document.createElement("div"); d.className = "toast" + (err ? " err" : ""); d.textContent = t;
+  document.body.appendChild(d); setTimeout(() => d.remove(), 2600); }
+async function api(path, body) {
+  const r = await fetch("/api/" + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+  const d = await r.json().catch(() => ({ ok: false, error: "Нет связи" }));
+  if (r.status === 401 && path !== "admin/login") { login(); throw Object.assign(new Error(""), { silent: true }); }
+  if (!d.ok) throw new Error(d.error || "Ошибка");
+  return d;
+}
+const run = fn => Promise.resolve().then(fn).catch(e => e.silent || toast(e.message, true));
+const val = id => document.getElementById(id).value;
+
+function login() {
+  root.innerHTML = `<div class="card login"><h3>Вход для владельца</h3>
+    <label><span>Пароль</span><input id="pw" type="password" autofocus></label>
+    <div class="acts"><button class="btn" id="go">Войти</button></div>
+    <p class="hint">Пароль — переменная ADMIN_PASSWORD на Render.</p></div>`;
+  const go = () => run(async () => { await api("admin/login", { password: val("pw") }); await load(); });
+  document.getElementById("go").onclick = go;
+  document.getElementById("pw").onkeydown = e => { if (e.key === "Enter") go(); };
+}
+async function load() { ST = await api("admin/state"); draw(); }
+function draw() {
+  const tabs = [["stats", "Сводка"], ["branches", "Филиалы"], ["bonus", "Бонусы и акции"], ["clients", "Клиенты"]];
+  root.innerHTML = `<header><b>BILAL</b><nav>${tabs.map(([k, l]) => `<button data-tab="${k}" class="${TAB === k ? "on" : ""}">${l}</button>`).join("")}</nav>
+    <a href="/" target="_blank" style="color:#cfc5b6">Сайт ↗</a> <button class="btn l" id="out" style="padding:6px 10px">Выйти</button></header><main id="m"></main>`;
+  document.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { TAB = b.dataset.tab; EDIT = null; draw(); });
+  document.getElementById("out").onclick = () => run(async () => { await api("admin/logout"); login(); });
+  ({ stats, branches, bonus, clients })[TAB]();
+}
+
+// ---------- сводка ----------
+const ST_BADGE = { done: "g", rejected: "r", cancelled: "r" };
+const KIND = { delivery: "Доставка", pickup: "Самовывоз", table: "В зале" };
+function stats() {
+  const s = ST.stats[PER], sum = s.branches.reduce((a, b) => a + b.s, 0), n = s.branches.reduce((a, b) => a + b.n, 0);
+  document.getElementById("m").innerHTML = `<div class="card">
+    <div class="seg">${[["day", "Сутки"], ["week", "7 дней"], ["month", "30 дней"]].map(([k, l]) =>
+      `<button data-per="${k}" class="${PER === k ? "on" : ""}">${l}</button>`).join("")}</div>
+    <div class="kpis"><div class="kpi"><span>Онлайн-заказов выдано</span><b>${n}</b></div>
+      <div class="kpi"><span>На сумму</span><b>${money(sum)}</b></div>
+      <div class="kpi"><span>Средний чек</span><b>${money(n ? sum / n : 0)}</b></div>
+      <div class="kpi"><span>Новых клиентов</span><b>${s.new_clients}</b></div>
+      <div class="kpi"><span>Бонусов начислено / потрачено</span><b>${s.bonus_given} / ${s.bonus_spent}</b></div>
+      <div class="kpi"><span>Пришли по приглашению</span><b>${s.referrals}</b></div></div>
+    <div class="tw" style="margin-top:14px"><table><tr><th>Филиал</th><th class="r">Заказов</th><th class="r">Сумма</th>
+      <th class="r">Доставка</th><th class="r">Самовывоз</th><th class="r">В зале</th></tr>
+      ${s.branches.map(b => `<tr><td>${esc(b.name)}</td><td class="r">${b.n}</td><td class="r">${money(b.s)}</td>
+        <td class="r">${b.d || 0}</td><td class="r">${b.p || 0}</td><td class="r">${b.t || 0}</td></tr>`).join("")}</table></div></div>
+    <div class="card"><h3>Последние заказы</h3><div class="tw"><table><tr><th>Время</th><th>Филиал</th><th>Клиент</th><th>Тип</th><th class="r">Сумма</th><th>Статус</th></tr>
+      ${ST.orders.map(o => `<tr><td>${o.created.slice(5, 16).replace("T", " ")}</td><td>${esc(o.branch.name)}</td>
+        <td>${esc(o.name || "—")}<br><span class="hint">${esc(o.phone)}</span></td><td>${KIND[o.kind]}${o.table_no ? " " + esc(o.table_no) : ""}</td>
+        <td class="r">${money(o.total)}${o.bonus_spent ? `<br><span class="hint">бонусами ${o.bonus_spent}</span>` : ""}</td>
+        <td><span class="badge ${ST_BADGE[o.status] || ""}">${esc(o.status_text)}</span>${o.reason ? `<br><span class="hint">${esc(o.reason)}</span>` : ""}</td></tr>`).join("")
+        || `<tr><td colspan="6" class="hint">Пока нет заказов</td></tr>`}</table></div></div>`;
+  document.querySelectorAll("[data-per]").forEach(b => b.onclick = () => { PER = b.dataset.per; stats(); });
+}
+
+// ---------- филиалы ----------
+function branches() {
+  const m = document.getElementById("m");
+  if (EDIT !== null) return branchForm(m, EDIT ? ST.branches.find(b => b.id === EDIT) : null);
+  m.innerHTML = `<div class="card"><h3>Филиалы</h3>${ST.branches.map(b => `<div class="br"><div><b>${esc(b.name)}</b>
+      ${b.active ? "" : ` <span class="badge r">скрыт</span>`}${b.paused ? ` <span class="badge r">пауза</span>` : ""}
+      <small>${b.pos_online ? "🟢 касса на связи" : "⚪ касса не подключена"} · блюд на сайте: ${b.products} · ${esc(b.open_from)}–${esc(b.open_to)}${b.delivery ? " · доставка " + money(b.delivery_fee) : ""}</small></div>
+      <button class="btn l" data-edit="${b.id}">Настроить</button></div>`).join("") || `<p class="hint">Добавьте первый филиал.</p>`}
+    <div class="acts"><button class="btn g" id="add">➕ Филиал</button></div></div>`;
+  document.querySelectorAll("[data-edit]").forEach(el => el.onclick = () => { EDIT = +el.dataset.edit; branches(); });
+  document.getElementById("add").onclick = () => { EDIT = 0; branches(); };
+}
+function branchForm(m, b) {
+  const v = (k, d = "") => esc(b ? b[k] : d);
+  m.innerHTML = `<div class="card"><h3>${b ? esc(b.name) : "Новый филиал"}</h3><div class="grid2">
+    <label><span>Название</span><input id="b-name" value="${v("name")}"></label>
+    <label><span>Адрес (для самовывоза)</span><input id="b-address" value="${v("address")}"></label>
+    <label><span>Телефон филиала</span><input id="b-phone" value="${v("phone")}"></label>
+    <label><span>Открыто с</span><input id="b-open_from" value="${v("open_from", "09:00")}" placeholder="09:00"></label>
+    <label><span>до</span><input id="b-open_to" value="${v("open_to", "02:00")}" placeholder="02:00"></label>
+    <label class="chk"><input type="checkbox" id="b-delivery" ${!b || b.delivery ? "checked" : ""}> Доставка</label>
+    <label><span>Цена доставки</span><input id="b-delivery_fee" type="number" value="${v("delivery_fee", 0)}"></label>
+    <label><span>Бесплатная доставка от (0 — нет)</span><input id="b-free_from" type="number" value="${v("free_from", 0)}"></label>
+    <label><span>Минимальный заказ на доставку</span><input id="b-min_order" type="number" value="${v("min_order", 0)}"></label>
+    <label><span>Подсказка к переводу</span><input id="b-pay_note" value="${v("pay_note")}" placeholder="MBank, получатель Билал А."></label>
+    <label class="chk"><input type="checkbox" id="b-paused" ${b && b.paused ? "checked" : ""}> Пауза онлайн-заказов</label>
+    <label class="chk"><input type="checkbox" id="b-active" ${!b || b.active ? "checked" : ""}> Показывать на сайте</label>
+    </div><div class="acts"><button class="btn g" id="save">Сохранить</button><button class="btn l" id="cancel">Назад</button></div></div>
+    ${b ? `<div class="card"><h3>QR для перевода</h3>
+      ${b.qr ? `<img class="qrimg" src="${esc(b.qr)}" alt="">` : `<p class="hint">Не загружен — клиенты не увидят оплату переводом.</p>`}
+      <div class="acts"><label class="btn l">Загрузить QR<input type="file" accept="image/*" id="qr" hidden></label>
+      ${b.qr ? `<button class="btn r" id="qr-del">Убрать</button>` : ""}</div></div>
+    <div class="card"><h3>Подключение кассы</h3>
+      <p class="hint">Файл <b>online.json</b> рядом с manage.py на моноблоке этого филиала:</p>
+      <code>{"url": "${esc(location.origin)}", "token": "${esc(b.pos_token)}"}</code>
+      <p>${b.pos_online ? "🟢 Касса на связи" : "⚪ Касса пока не выходила на связь"}</p>
+      <div class="acts"><button class="btn r" id="tok">Выдать новый ключ</button></div>
+      <p class="hint">Новый ключ — если моноблок украли или ключ попал в чужие руки. Старый сразу перестанет работать.</p></div>
+    <div class="card"><h3>QR-коды</h3><div class="grid2">
+      <label><span>Столы: с</span><input id="t-from" type="number" value="1"></label>
+      <label><span>по</span><input id="t-to" type="number" value="10"></label></div>
+      <div class="acts"><button class="btn" id="print-t">🖨 Напечатать QR на столы</button>
+      <button class="btn l" id="print-s">🖨 QR «Заказать онлайн» (на упаковку, витрину)</button></div>
+      <p class="hint">QR со стола открывает меню этого филиала с номером стола; оплата — на кассе.</p></div>` : ""}`;
+  document.getElementById("cancel").onclick = () => { EDIT = null; branches(); };
+  document.getElementById("save").onclick = () => run(async () => {
+    const d = { id: b?.id };
+    ["name", "address", "phone", "open_from", "open_to", "delivery_fee", "free_from", "min_order", "pay_note"].forEach(k => d[k] = val("b-" + k));
+    ["delivery", "paused", "active"].forEach(k => d[k] = document.getElementById("b-" + k).checked ? 1 : 0);
+    const r = await api("admin/branch", d); toast("Сохранено"); EDIT = r.id; await load();
+  });
+  if (!b) return;
+  document.getElementById("qr").onchange = e => run(async () => {
+    const f = e.target.files[0]; if (!f) return;
+    if (f.size > 3e6) throw new Error("Файл больше 3 МБ");
+    const data = await new Promise(ok => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(f); });
+    await api("admin/branch/qr", { id: b.id, image: data }); toast("QR загружен"); await load();
+  });
+  document.getElementById("qr-del")?.addEventListener("click", () => run(async () => { await api("admin/branch/qr", { id: b.id }); await load(); }));
+  document.getElementById("tok").onclick = () => run(async () => {
+    if (!confirm("Выдать новый ключ? Кассе нужно будет вписать его в online.json.")) return;
+    await api("admin/branch/token", { id: b.id }); await load();
+  });
+  document.getElementById("print-t").onclick = () => {
+    const a = +val("t-from") || 1, z = Math.min(+val("t-to") || a, a + 99), list = [];
+    for (let i = a; i <= z; i++) list.push({ url: `${location.origin}/?b=${b.id}&t=${i}`, title: `Стол ${i}`, sub: "Наведите камеру — меню и заказ" });
+    printQR(list, b.name);
+  };
+  document.getElementById("print-s").onclick = () => printQR(Array(6).fill({ url: `${location.origin}/?b=${b.id}`, title: "Заказать онлайн",
+    sub: ST.settings.welcome_bonus > 0 ? `+${ST.settings.welcome_bonus} сом бонусами за первый заказ` : "Меню, доставка, бонусы" }), b.name);
+}
+function printQR(list, name) {
+  const w = window.open("", "_blank");
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>QR ${esc(name)}</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+    <style>body{font-family:Arial,sans-serif;margin:0}.g{display:grid;grid-template-columns:1fr 1fr;gap:8mm;padding:8mm}
+    .c{border:1px dashed #bbb;border-radius:4mm;padding:6mm;text-align:center;break-inside:avoid}
+    .c h2{margin:0 0 2mm;font-size:22pt}.c p{margin:2mm 0 0;font-size:11pt;color:#444}.q{display:inline-block;margin-top:3mm}
+    .b{font-weight:800;letter-spacing:1px;color:#c8962e}@media print{.np{display:none}}</style></head><body>
+    <p class="np" style="padding:8mm;margin:0">Печать: Ctrl+P. Вырежьте по пунктиру.</p><div class="g">${list.map((x, i) =>
+      `<div class="c"><div class="b">BILAL · ${esc(name)}</div><h2>${esc(x.title)}</h2><div class="q" id="q${i}"></div><p>${esc(x.sub)}</p></div>`).join("")}</div>
+    <script>window.onload=()=>{${JSON.stringify(list.map(x => x.url))}.forEach((u,i)=>new QRCode(document.getElementById("q"+i),{text:u,width:170,height:170,correctLevel:QRCode.CorrectLevel.M}))}<\/script>
+    </body></html>`);
+  w.document.close();
+}
+
+// ---------- бонусы и акции ----------
+function bonus() {
+  const s = ST.settings, f = (k, l, h) => `<label><span>${l}</span><input id="s-${k}" value="${esc(s[k])}"${h ? ` placeholder="${h}"` : ""}></label>`;
+  document.getElementById("m").innerHTML = `<div class="card"><h3>Правила бонусов</h3><div class="grid2">
+    ${f("brand", "Название на сайте")}
+    ${f("cashback_pct", "Кэшбэк, % с оплаченной суммы")}
+    ${f("max_spend_pct", "Бонусами можно оплатить до, % заказа")}
+    ${f("welcome_bonus", "Бонус за первый заказ, сом")}
+    ${f("referral_bonus", "Пригласившему друга, сом")}
+    ${f("bonus_days", "Бонусы сгорают без заказов через, дней (0 — никогда)")}
+    ${f("big_order", "Большой заказ (кассир звонит) от, сом")}
+    ${f("no_show_limit", "Не забрал N раз — только предоплата")}
+    ${f("happy_from", "«Счастливые часы» с", "14:00")}
+    ${f("happy_to", "по", "17:00")}
+    ${f("happy_mult", "Множитель кэшбэка в эти часы", "2")}
+    </div><div class="acts"><button class="btn g" id="save">Сохранить</button></div>
+    <p class="hint">Бонусы начисляются, когда заказ выдан. Тратить их можно только с телефона, на который уже был выдан заказ — так чужой номер не подставить.
+    «Счастливые часы» оставьте пустыми, если не нужны.</p></div>
+    <div class="card"><h3>Акции на сайте</h3><p class="hint">Карточки вверху меню. Бонусные акции (кэшбэк, первый заказ, пригласи друга, счастливые часы) показываются сами.</p>
+    ${ST.promos.map(p => `<div class="br"><div><b>${esc(p.title)}</b>${p.active ? "" : ` <span class="badge r">скрыта</span>`}<small>${esc(p.text)}</small></div>
+      <span style="display:flex;gap:6px"><button class="btn l" data-pt="${p.id}">${p.active ? "Скрыть" : "Показать"}</button>
+      <button class="btn r" data-pd="${p.id}">✕</button></span></div>`).join("")}
+    <div class="grid2" style="margin-top:12px"><label><span>Заголовок</span><input id="p-title" placeholder="Комбо дня — 299 сом"></label>
+      <label><span>Текст</span><input id="p-text" placeholder="Шаурма M + кола 0.5"></label></div>
+    <div class="acts"><button class="btn" id="padd">Добавить акцию</button></div></div>`;
+  document.getElementById("save").onclick = () => run(async () => {
+    const d = {}; Object.keys(s).forEach(k => { const el = document.getElementById("s-" + k); if (el) d[k] = el.value; });
+    await api("admin/settings", d); toast("Сохранено"); await load();
+  });
+  document.getElementById("padd").onclick = () => run(async () => { await api("admin/promo", { title: val("p-title"), text: val("p-text") }); await load(); });
+  document.querySelectorAll("[data-pt]").forEach(el => el.onclick = () => run(async () => {
+    const p = ST.promos.find(x => x.id === +el.dataset.pt); await api("admin/promo", { ...p, active: !p.active }); await load(); }));
+  document.querySelectorAll("[data-pd]").forEach(el => el.onclick = () => run(async () => {
+    if (!confirm("Удалить акцию?")) return; await api("admin/promo", { id: +el.dataset.pd, delete: 1 }); await load(); }));
+}
+
+// ---------- клиенты ----------
+function clients() {
+  document.getElementById("m").innerHTML = `<div class="card"><h3>Клиенты</h3>
+    <label><span>Поиск по номеру или имени</span><input id="q" placeholder="0555…"></label><div class="tw" id="cl" style="margin-top:12px"></div></div>`;
+  let t; const search = () => run(async () => {
+    const r = await api("admin/clients", { q: val("q") });
+    document.getElementById("cl").innerHTML = `<table><tr><th>Клиент</th><th class="r">Заказов</th><th class="r">Бонусы</th><th></th></tr>${r.clients.map(c =>
+      `<tr><td>${esc(c.name || "—")}<br><span class="hint">${esc(c.phone)} · ${c.last.slice(0, 10)}</span>
+        ${c.no_show ? `<br><span class="badge r">не забрал: ${c.no_show}</span>` : ""}</td><td class="r">${c.orders}</td><td class="r">${c.balance}</td>
+        <td class="r" style="white-space:nowrap"><button class="btn l" data-b="${c.id}">± бонусы</button>
+        ${c.no_show ? `<button class="btn l" data-u="${c.id}">Снять ограничение</button>` : ""}</td></tr>`).join("") ||
+      `<tr><td colspan="4" class="hint">Никого не нашли</td></tr>`}</table>`;
+    document.querySelectorAll("[data-b]").forEach(el => el.onclick = () => run(async () => {
+      const a = prompt("Сколько бонусов? (минус — списать)", "100"); if (!a) return;
+      await api("admin/client/bonus", { id: +el.dataset.b, amount: +a, note: prompt("За что?", "подарок") || "" }); toast("Готово"); search();
+    }));
+    document.querySelectorAll("[data-u]").forEach(el => el.onclick = () => run(async () => { await api("admin/client/unblock", { id: +el.dataset.u }); search(); }));
+  });
+  document.getElementById("q").oninput = () => { clearTimeout(t); t = setTimeout(search, 300); };
+  search();
+}
+run(load);
+</script>
+</body>
+</html>

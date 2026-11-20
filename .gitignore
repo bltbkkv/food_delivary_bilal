@@ -1,0 +1,13 @@
+# Данные (заказы, клиенты, чеки) и секреты — никогда не загружать на GitHub
+data/
+*.db
+*.db-wal
+*.db-shm
+.env
+online.json
+# Служебное
+__pycache__/
+*.pyc
+.venv/
+venv/
+.idea/

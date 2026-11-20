@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1c1a17">
+<title>Bilal — заказ онлайн</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon.svg">
+<style>
+:root {
+  --bg: #f7f3ec; --card: #fff; --ink: #1c1a17; --muted: #7a7166; --line: #ebe4d8;
+  --gold: #c8962e; --gold-soft: #f6ead0; --green: #1f7a5a; --green-soft: #e3f2ec;
+  --red: #c4432f; --red-soft: #fbe7e3; --dark: #1c1a17;
+  --r: 16px; --shadow: 0 2px 10px rgba(40, 30, 10, .07);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+input, textarea, select { font: inherit; color: inherit; }
+img { display: block; }
+.wrap { max-width: 640px; margin: 0 auto; padding: 0 16px 120px; }
+header { position: sticky; top: 0; z-index: 20; background: var(--dark); color: #fff;
+  padding: 10px 16px calc(10px) ; padding-top: max(10px, env(safe-area-inset-top)); }
+header .in { max-width: 640px; margin: 0 auto; display: flex; align-items: center; gap: 10px; }
+.brand { font-weight: 800; font-size: 20px; letter-spacing: .5px; color: var(--gold); }
+.branch-btn { flex: 1; min-width: 0; text-align: left; color: #fff; font-size: 14px; line-height: 1.2; }
+.branch-btn small { display: block; color: #bdb3a4; font-size: 12px; }
+.branch-btn b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.bonus-chip { background: rgba(200, 150, 46, .18); color: var(--gold); border-radius: 20px; padding: 7px 12px;
+  font-weight: 700; font-size: 14px; white-space: nowrap; }
+.cats { position: sticky; top: 58px; z-index: 10; background: var(--bg); display: flex; gap: 8px; overflow-x: auto;
+  padding: 10px 16px; margin: 0 -16px; scrollbar-width: none; }
+.cats::-webkit-scrollbar, .promos::-webkit-scrollbar { display: none; }
+.cats button { flex: 0 0 auto; padding: 8px 14px; border-radius: 20px; background: var(--card); font-weight: 600;
+  font-size: 14px; box-shadow: var(--shadow); }
+.cats button.on { background: var(--dark); color: #fff; }
+.promos { display: flex; gap: 10px; overflow-x: auto; margin: 14px -16px 4px; padding: 0 16px; scrollbar-width: none;
+  scroll-snap-type: x mandatory; }
+.promo { flex: 0 0 78%; max-width: 300px; scroll-snap-align: start; border-radius: var(--r); padding: 14px 16px;
+  background: var(--dark); color: #fff; min-height: 92px; }
+.promo b { display: block; font-size: 17px; color: var(--gold); margin-bottom: 4px; }
+.promo span { font-size: 14px; color: #ddd3c4; }
+.promo.green { background: var(--green); } .promo.green b { color: #fff; } .promo.green span { color: #d9efe6; }
+.promo.gold { background: var(--gold-soft); color: var(--ink); } .promo.gold b { color: #8a5f10; }
+.promo.gold span { color: #6b5a3d; }
+h2.cat { font-size: 20px; margin: 22px 0 10px; scroll-margin-top: 120px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.p { background: var(--card); border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow);
+  display: flex; flex-direction: column; }
+.p .ph { aspect-ratio: 4/3; background: var(--gold-soft); display: grid; place-items: center; font-size: 40px; }
+.p .ph img { width: 100%; height: 100%; object-fit: cover; }
+.p .b { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.p .n { font-weight: 600; font-size: 15px; line-height: 1.25; flex: 1; }
+.p .pr { font-weight: 800; font-size: 16px; }
+.add { background: var(--gold-soft); color: #7a520a; border-radius: 12px; padding: 9px; font-weight: 700; width: 100%; }
+.step { display: flex; align-items: center; justify-content: space-between; background: var(--dark); color: #fff;
+  border-radius: 12px; }
+.step button { width: 40px; height: 38px; font-size: 20px; font-weight: 700; color: #fff; }
+.step b { font-size: 15px; }
+.cartbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 10px 16px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom)); background: linear-gradient(transparent, var(--bg) 30%); }
+.cartbar button, .main { display: flex; justify-content: space-between; align-items: center; width: 100%;
+  max-width: 608px; margin: 0 auto; background: var(--green); color: #fff; border-radius: 14px; padding: 15px 18px;
+  font-weight: 700; font-size: 16px; box-shadow: 0 6px 18px rgba(31, 122, 90, .3); }
+.main { justify-content: center; }
+.main:disabled { opacity: .5; }
+.closed { background: var(--red-soft); color: var(--red); border-radius: 12px; padding: 12px 14px; margin-top: 14px;
+  font-weight: 600; font-size: 15px; }
+.table-banner { background: var(--green-soft); color: var(--green); border-radius: 12px; padding: 12px 14px;
+  margin-top: 14px; font-weight: 600; }
+.card { background: var(--card); border-radius: var(--r); box-shadow: var(--shadow); padding: 14px 16px; margin-top: 12px; }
+.card h3 { margin: 0 0 10px; font-size: 17px; }
+.row { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; }
+.row .m { color: var(--muted); }
+.row.total { font-weight: 800; font-size: 18px; border-top: 1px solid var(--line); margin-top: 6px; padding-top: 10px; }
+.line { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.line:last-child { border-bottom: 0; }
+.line .n { flex: 1; font-weight: 600; font-size: 15px; }
+.line .n small { display: block; color: var(--muted); font-weight: 400; }
+.line .step { width: 110px; flex: 0 0 auto; }
+.seg { display: flex; background: var(--line); border-radius: 12px; padding: 3px; gap: 3px; }
+.seg button { flex: 1; padding: 10px 6px; border-radius: 10px; font-weight: 600; font-size: 14px; color: var(--muted); }
+.seg button.on { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
+label.f { display: block; margin-top: 12px; }
+label.f span { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+label.f input, label.f textarea { width: 100%; border: 1px solid var(--line); background: #fdfbf8; border-radius: 12px;
+  padding: 12px; font-size: 16px; outline: none; }
+label.f input:focus, label.f textarea:focus { border-color: var(--gold); }
+.geo { margin-top: 8px; color: var(--green); font-weight: 600; font-size: 14px; }
+.opt { display: flex; gap: 12px; align-items: flex-start; padding: 12px; border: 1.5px solid var(--line);
+  border-radius: 12px; margin-top: 8px; width: 100%; text-align: left; }
+.opt.on { border-color: var(--green); background: var(--green-soft); }
+.opt .dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line); flex: 0 0 auto; margin-top: 1px; }
+.opt.on .dot { border: 6px solid var(--green); }
+.opt small { display: block; color: var(--muted); font-size: 13px; }
+.qr { width: 220px; max-width: 100%; margin: 12px auto 6px; border-radius: 12px; background: #fff; }
+.hint { color: var(--muted); font-size: 13px; margin-top: 8px; }
+.earn { color: var(--green); font-weight: 600; }
+.back { font-weight: 600; color: var(--muted); padding: 14px 0 0; }
+.status { text-align: center; padding: 22px 16px; }
+.status .big { font-size: 46px; }
+.status h1 { margin: 6px 0 2px; font-size: 24px; }
+.status .num { font-size: 15px; color: var(--muted); }
+.steps { display: flex; gap: 6px; margin: 16px 0 4px; }
+.steps i { flex: 1; height: 6px; border-radius: 3px; background: var(--line); }
+.steps i.on { background: var(--green); }
+.steps-l { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+.btn2 { display: block; width: 100%; text-align: center; padding: 13px; border-radius: 12px; font-weight: 700;
+  background: var(--card); box-shadow: var(--shadow); margin-top: 10px; text-decoration: none; color: var(--ink); }
+.btn2.red { color: var(--red); }
+.bal { background: var(--dark); color: #fff; border-radius: var(--r); padding: 18px; margin-top: 16px; }
+.bal b { font-size: 34px; color: var(--gold); display: block; }
+.ref { background: var(--gold-soft); border-radius: var(--r); padding: 16px; margin-top: 12px; }
+.ref b { display: block; font-size: 17px; margin-bottom: 4px; }
+.hist .row { font-size: 14px; }
+.plus { color: var(--green); font-weight: 700; } .minus { color: var(--red); font-weight: 700; }
+.sheet-bg { position: fixed; inset: 0; background: rgba(0, 0, 0, .45); z-index: 50; display: flex; align-items: flex-end; }
+.sheet { background: var(--bg); width: 100%; max-width: 640px; margin: 0 auto; border-radius: 20px 20px 0 0;
+  padding: 18px 16px max(20px, env(safe-area-inset-bottom)); max-height: 85vh; overflow: auto; }
+.sheet h3 { margin: 0 0 8px; }
+.toast { position: fixed; left: 50%; top: 16px; transform: translateX(-50%); background: var(--dark); color: #fff;
+  padding: 12px 18px; border-radius: 12px; z-index: 99; font-weight: 600; font-size: 15px; max-width: 90%;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .25); }
+.toast.err { background: var(--red); }
+.empty { text-align: center; color: var(--muted); padding: 40px 0; }
+.ord { display: flex; justify-content: space-between; align-items: center; width: 100%; text-align: left; padding: 10px 0;
+  border-bottom: 1px solid var(--line); }
+.ord:last-child { border-bottom: 0; }
+.ord small { display: block; color: var(--muted); font-size: 13px; }
+.badge { font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 8px; background: var(--line); }
+.badge.g { background: var(--green-soft); color: var(--green); } .badge.r { background: var(--red-soft); color: var(--red); }
+.spin { text-align: center; color: var(--muted); padding: 60px 0; }
+@media (min-width: 560px) { .grid { grid-template-columns: 1fr 1fr 1fr; } }
+</style>
+</head>
+<body>
+<header><div class="in">
+  <div class="brand" id="brand">BILAL</div>
+  <button class="branch-btn" id="branch-btn"><small>Филиал</small><b id="branch-name">…</b></button>
+  <button class="bonus-chip" id="bonus-chip">⭐ Бонусы</button>
+</div></header>
+<div class="wrap" id="app"><div class="spin">Загрузка…</div></div>
+<div class="cartbar" id="cartbar" hidden></div>
+
+<script>
+"use strict";
+const $app = document.getElementById("app");
+const K = { token: "bilal.token", branch: "bilal.branch", cart: "bilal.cart.", orders: "bilal.orders", ref: "bilal.ref",
+  form: "bilal.form" };
+const ls = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+};
+const S = { pub: null, branch: null, menu: [], cart: {}, me: null, view: "menu", order: null, kind: "pickup",
+  pay: "cash", useBonus: true, check: null, geo: null, timer: null };
+const url = new URLSearchParams(location.search);
+const TABLE = url.get("t") ? String(url.get("t")).slice(0, 10) : null;
+if (url.get("ref")) ls.set(K.ref, url.get("ref"));
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const money = n => Math.round(n).toLocaleString("ru-RU").replace(/,/g, " ") + " сом";
+const pct = n => (+n).toLocaleString("ru-RU", { maximumFractionDigits: 1 }) + "%";
+function toast(text, err) {
+  const t = document.createElement("div"); t.className = "toast" + (err ? " err" : ""); t.textContent = text;
+  document.body.appendChild(t); setTimeout(() => t.remove(), err ? 4000 : 2200);
+}
+async function api(path, body) {
+  const r = await fetch("/api/" + path, { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body || {}) });
+  let d; try { d = await r.json(); } catch (e) { throw new Error("Нет связи. Проверьте интернет."); }
+  if (!d.ok) throw new Error(d.error || "Ошибка");
+  return d;
+}
+const run = fn => Promise.resolve().then(fn).catch(e => toast(e.message, true));
+
+// ---------- корзина ----------
+const cartKey = () => K.cart + (S.branch?.id || 0);
+function saveCart() { ls.set(cartKey(), S.cart); renderBar(); }
+const product = id => S.menu.find(p => p.id === +id);
+function cartLines() {
+  return Object.entries(S.cart).map(([id, q]) => ({ p: product(id), q })).filter(x => x.p && x.q > 0);
+}
+const subtotal = () => cartLines().reduce((s, x) => s + x.p.price * x.q, 0);
+const count = () => cartLines().reduce((s, x) => s + x.q, 0);
+function setQty(id, q) {
+  if (q <= 0) delete S.cart[id]; else S.cart[id] = Math.min(q, 50);
+  saveCart();
+}
+
+// ---------- запуск ----------
+async function boot() {
+  S.pub = await api("public");
+  document.getElementById("brand").textContent = (S.pub.brand || "Bilal").toUpperCase();
+  const want = +url.get("b") || ls.get(K.branch, 0);
+  S.branch = S.pub.branches.find(b => b.id === want) || (S.pub.branches.length === 1 ? S.pub.branches[0] : null);
+  if (TABLE) S.kind = "table";
+  await loadMe();
+  if (url.get("o")) { const code = url.get("o"); url.delete("o");
+    history.replaceState(null, "", location.pathname + (url.toString() ? "?" + url : "")); return openOrder(code); }
+  if (!S.branch) return pickBranch(true);
+  await loadMenu();
+}
+async function loadMe() {
+  const token = ls.get(K.token, null);
+  S.me = token ? await api("me", { token }).catch(() => null) : null;
+  const chip = document.getElementById("bonus-chip");
+  chip.textContent = S.me?.client ? `⭐ ${S.me.client.balance}` : "⭐ Бонусы";
+}
+async function loadMenu() {
+  ls.set(K.branch, S.branch.id);
+  document.getElementById("branch-name").textContent = S.branch.name;
+  const d = await api("menu", { branch_id: S.branch.id });
+  S.branch = d.branch; S.menu = d.products; S.cart = ls.get(cartKey(), {});
+  for (const id of Object.keys(S.cart)) if (!product(id)) delete S.cart[id];
+  if (!S.branch.delivery && S.kind === "delivery") S.kind = "pickup";
+  showMenu();
+}
+
+// ---------- меню ----------
+function autoPromos() {
+  const r = S.pub.rules, out = [];
+  if (r.welcome_bonus) out.push({ c: "green", t: `+${r.welcome_bonus} сом за первый заказ`, s: "Бонусами — на следующие заказы" });
+  if (r.base_pct) out.push({ c: "", t: `Кэшбэк ${pct(r.base_pct)} бонусами`, s: `Оплачивайте ими до ${pct(r.max_spend_pct)} заказа` });
+  if (r.happy_from && r.happy_to && r.happy_mult > 1)
+    out.push({ c: "gold", t: `×${r.happy_mult} бонусов с ${r.happy_from} до ${r.happy_to}`, s: "Каждый день" });
+  if (r.referral_bonus) out.push({ c: "gold", t: `Пригласи друга — +${r.referral_bonus} сом`, s: "Ссылка в разделе «Бонусы»" });
+  return out;
+}
+function showMenu() {
+  S.view = "menu"; stopPoll();
+  const cats = [...new Set(S.menu.map(p => p.category))];
+  const promos = [...S.pub.promos.map(p => ({ c: "", t: p.title, s: p.text })), ...autoPromos()];
+  const b = S.branch;
+  $app.innerHTML =
+    (TABLE ? `<div class="table-banner">🍽 Стол ${esc(TABLE)} — закажите здесь, оплата на кассе</div>` : "") +
+    (!b.open ? `<div class="closed">${b.paused ? "Филиал временно не принимает онлайн-заказы" :
+      `Сейчас закрыто. Принимаем заказы с ${esc(b.open_from)} до ${esc(b.open_to)}`}</div>` : "") +
+    (promos.length ? `<div class="promos">${promos.map(p => `<div class="promo ${p.c}"><b>${esc(p.t)}</b><span>${esc(p.s)}</span></div>`).join("")}</div>` : "") +
+    (cats.length > 1 ? `<nav class="cats">${cats.map((c, i) => `<button data-cat="${i}">${esc(c)}</button>`).join("")}</nav>` : "") +
+    (S.menu.length ? cats.map((c, i) => `<h2 class="cat" id="cat-${i}">${esc(c)}</h2><div class="grid">${
+      S.menu.filter(p => p.category === c).map(card).join("")}</div>`).join("")
+      : `<div class="empty">Меню скоро появится</div>`);
+  bindCards();
+  document.querySelectorAll("[data-cat]").forEach(el => el.onclick = () => {
+    document.getElementById("cat-" + el.dataset.cat).scrollIntoView({ behavior: "smooth" });
+  });
+  spyCats();
+  renderBar();
+}
+function card(p) {
+  const q = S.cart[p.id] || 0;
+  return `<div class="p" data-p="${p.id}"><div class="ph">${p.img ? `<img src="${esc(p.img)}" alt="" loading="lazy">` : "🍽"}</div>
+    <div class="b"><div class="n">${esc(p.name)}</div><div class="pr">${money(p.price)}</div>${ctl(p, q)}</div></div>`;
+}
+const ctl = (p, q) => q ? `<div class="step"><button data-minus="${p.id}">−</button><b>${q}</b><button data-plus="${p.id}">+</button></div>`
+  : `<button class="add" data-plus="${p.id}">+ Добавить</button>`;
+function bindCards(root = $app) {
+  root.querySelectorAll("[data-plus]").forEach(el => el.onclick = () => change(el.dataset.plus, 1));
+  root.querySelectorAll("[data-minus]").forEach(el => el.onclick = () => change(el.dataset.minus, -1));
+}
+function change(id, d) {
+  setQty(id, (S.cart[id] || 0) + d);
+  if (navigator.vibrate) navigator.vibrate(8);
+  if (S.view === "menu") {
+    const box = $app.querySelector(`[data-p="${id}"] .b`);
+    if (box) { box.lastElementChild.outerHTML = ctl(product(id), S.cart[id] || 0); bindCards(box); }
+  } else if (S.view === "checkout") {
+    if (!count()) return showMenu();
+    showCheckout(true);
+  }
+}
+function spyCats() {
+  const btns = [...document.querySelectorAll("[data-cat]")];
+  if (!btns.length || !("IntersectionObserver" in window)) return;
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (!e.isIntersecting) return;
+    btns.forEach(b => b.classList.toggle("on", "cat-" + b.dataset.cat === e.target.id));
+    btns.find(b => b.classList.contains("on"))?.scrollIntoView({ inline: "center", block: "nearest" });
+  }), { rootMargin: "-130px 0px -70% 0px" });
+  document.querySelectorAll("h2.cat").forEach(h => io.observe(h));
+}
+function renderBar() {
+  const bar = document.getElementById("cartbar");
+  if (S.view !== "menu" || !count()) { bar.hidden = true; return; }
+  bar.hidden = false;
+  bar.innerHTML = `<button id="go-cart"><span>Корзина · ${count()}</span><span>${money(subtotal())}</span></button>`;
+  document.getElementById("go-cart").onclick = () => showCheckout();
+}
+
+// ---------- оформление ----------
+function form() { return ls.get(K.form, {}); }
+function saveForm() {
+  const f = {};
+  ["name", "phone", "address", "comment"].forEach(k => { const el = document.getElementById("f-" + k); if (el) f[k] = el.value; });
+  ls.set(K.form, { ...form(), ...f });
+}
+function totals() {
+  const b = S.branch, sub = subtotal(), r = S.pub.rules;
+  const fee = S.kind === "delivery" && !(b.free_from && sub >= b.free_from) ? b.delivery_fee : 0;
+  const c = S.me?.client, can = c && c.trusted && c.balance > 0 && S.kind !== "table";
+  const spend = can && S.useBonus ? Math.min(c.balance, Math.floor(sub * r.max_spend_pct / 100)) : 0;
+  const total = sub - spend + fee;
+  return { sub, fee, spend, total, can, earn: Math.floor((total - fee) * r.cashback_pct / 100) };
+}
+function showCheckout(keep) {
+  if (keep) saveForm();
+  S.view = "checkout"; renderBar();
+  const b = S.branch, f = form(), t = totals(), c = S.me?.client;
+  const kinds = TABLE ? [] : [["pickup", "Самовывоз"], ...(b.delivery ? [["delivery", "Доставка"]] : [])];
+  $app.innerHTML = `<button class="back" id="back">← Меню</button>
+    <div class="card"><h3>Ваш заказ</h3>${cartLines().map(({ p, q }) => `<div class="line" data-p="${p.id}">
+      <div class="n">${esc(p.name)}<small>${money(p.price)}</small></div>
+      <div class="step"><button data-minus="${p.id}">−</button><b>${q}</b><button data-plus="${p.id}">+</button></div></div>`).join("")}</div>
+    ${TABLE ? `<div class="table-banner">🍽 Стол ${esc(TABLE)} · оплата на кассе</div>` :
+      `<div class="card">${kinds.length > 1 ? `<div class="seg">${kinds.map(([k, l]) =>
+        `<button data-kind="${k}" class="${S.kind === k ? "on" : ""}">${l}</button>`).join("")}</div>` : ""}
+      ${S.kind === "pickup" ? `<p class="hint">Заберите в филиале: ${esc(b.address || b.name)}</p>` : ""}
+      ${S.kind === "delivery" ? `<label class="f"><span>Адрес доставки</span><textarea id="f-address" rows="2"
+          placeholder="Улица, дом, квартира, подъезд">${esc(f.address || "")}</textarea></label>
+        <button class="geo" id="geo">${S.geo ? "📍 Местоположение добавлено" : "📍 Добавить моё местоположение"}</button>
+        ${b.delivery_fee ? `<p class="hint">Доставка ${money(b.delivery_fee)}${b.free_from ? `, бесплатно от ${money(b.free_from)}` : ""}</p>` : ""}` : ""}
+      </div>`}
+    <div class="card"><h3>Контакты</h3>
+      <label class="f"><span>Имя${TABLE ? " (необязательно)" : ""}</span><input id="f-name" autocomplete="name" maxlength="60" value="${esc(f.name || c?.name || "")}"></label>
+      <label class="f"><span>Телефон${TABLE ? " — чтобы получить бонусы" : ""}</span><input id="f-phone" type="tel" inputmode="tel"
+        autocomplete="tel" placeholder="0555 123 456" value="${esc(f.phone || c?.phone || "")}"></label>
+      ${TABLE ? "" : `<label class="f"><span>К какому времени</span><input id="f-time" placeholder="Как можно скорее" maxlength="20"></label>`}
+      <label class="f"><span>Комментарий</span><input id="f-comment" maxlength="300" placeholder="Без лука, острее…" value="${esc(f.comment || "")}"></label>
+    </div>
+    ${TABLE ? "" : `<div class="card"><h3>Оплата</h3>
+      <button class="opt ${S.pay === "cash" ? "on" : ""}" data-pay="cash"><span class="dot"></span><span>При получении
+        <small>Наличными или переводом на кассе${S.kind === "delivery" ? " / курьеру" : ""}</small></span></button>
+      ${b.has_qr ? `<button class="opt ${S.pay === "transfer" ? "on" : ""}" data-pay="transfer"><span class="dot"></span><span>Перевод сейчас
+        <small>По QR филиала, прикрепите чек</small></span></button>` : ""}
+      ${S.pay === "transfer" ? `<p class="hint">После оформления покажем QR для перевода — сумма ${money(t.total)}.</p>
+        <label class="f"><span>Чек перевода (можно прикрепить позже)</span><input id="f-check" type="file" accept="image/*"></label>` : ""}
+    </div>`}
+    <div class="card">
+      ${t.can ? `<button class="opt ${S.useBonus ? "on" : ""}" id="use-bonus"><span class="dot"></span><span>Списать бонусы: ${money(t.spend || Math.min(c.balance, Math.floor(t.sub * S.pub.rules.max_spend_pct / 100)))}
+        <small>На счёте ${money(c.balance)}, можно до ${pct(S.pub.rules.max_spend_pct)} заказа</small></span></button>` :
+        c && c.balance > 0 && !c.trusted ? `<p class="hint">Бонусы можно тратить после первого полученного заказа с этого телефона.</p>` : ""}
+      <div class="row"><span class="m">Блюда</span><span>${money(t.sub)}</span></div>
+      ${t.fee ? `<div class="row"><span class="m">Доставка</span><span>${money(t.fee)}</span></div>` : ""}
+      ${t.spend ? `<div class="row"><span class="m">Бонусами</span><span class="minus">−${money(t.spend)}</span></div>` : ""}
+      <div class="row total"><span>К оплате</span><span>${money(t.total)}</span></div>
+      ${t.earn > 0 ? `<div class="row"><span class="earn">+${money(t.earn)} бонусами за этот заказ${TABLE ? ", если укажете телефон" : ""}</span></div>` : ""}
+    </div>
+    ${!b.open ? `<div class="closed">Сейчас филиал не принимает заказы</div>` : ""}
+    ${S.kind === "delivery" && b.min_order && t.sub < b.min_order ? `<div class="closed">Минимальный заказ на доставку — ${money(b.min_order)}</div>` : ""}
+    <div style="height:14px"></div>
+    <button class="main" id="send" ${b.open ? "" : "disabled"}>Заказать · ${money(t.total)}</button>
+    <p class="hint" style="text-align:center">Нажимая «Заказать», вы соглашаетесь, что филиал может позвонить для уточнения.</p>`;
+  window.scrollTo(0, keep ? window.scrollY : 0);
+  bindCards();
+  document.getElementById("back").onclick = () => { saveForm(); showMenu(); window.scrollTo(0, 0); };
+  document.querySelectorAll("[data-kind]").forEach(el => el.onclick = () => { S.kind = el.dataset.kind; showCheckout(true); });
+  document.querySelectorAll("[data-pay]").forEach(el => el.onclick = () => { S.pay = el.dataset.pay; showCheckout(true); });
+  document.getElementById("use-bonus")?.addEventListener("click", () => { S.useBonus = !S.useBonus; showCheckout(true); });
+  document.getElementById("geo")?.addEventListener("click", () => {
+    if (!navigator.geolocation) return toast("Телефон не даёт местоположение", true);
+    navigator.geolocation.getCurrentPosition(p => { S.geo = { lat: p.coords.latitude, lon: p.coords.longitude };
+      toast("Местоположение добавлено"); showCheckout(true); },
+      () => toast("Разрешите доступ к местоположению или напишите адрес", true), { timeout: 10000 });
+  });
+  document.getElementById("f-check")?.addEventListener("change", e => run(async () => {
+    S.check = e.target.files[0] ? await shrink(e.target.files[0]) : null; if (S.check) toast("Чек прикреплён");
+  }));
+  document.getElementById("send").onclick = () => run(send);
+}
+async function send() {
+  saveForm();
+  const btn = document.getElementById("send"); btn.disabled = true; btn.textContent = "Отправляем…";
+  try {
+    const f = form(), t = totals();
+    const r = await api("order/new", {
+      branch_id: S.branch.id, kind: S.kind, table_no: TABLE, name: f.name, phone: f.phone,
+      address: f.address, comment: f.comment, want_time: document.getElementById("f-time")?.value || "",
+      lat: S.geo?.lat, lon: S.geo?.lon, pay: S.pay, use_bonus: t.can && S.useBonus,
+      items: cartLines().map(x => ({ id: x.p.id, qty: x.q })), token: ls.get(K.token, null),
+      ref: ls.get(K.ref, null), check: S.pay === "transfer" ? S.check : null,
+    });
+    if (r.token) ls.set(K.token, r.token);
+    ls.set(K.orders, [r.code, ...ls.get(K.orders, []).filter(c => c !== r.code)].slice(0, 20));
+    S.cart = {}; saveCart(); S.check = null;
+    await loadMe();
+    openOrder(r.code);
+  } finally { btn.disabled = false; }
+}
+function shrink(file) {  // чек: уменьшаем фото перед отправкой
+  return new Promise((ok, bad) => {
+    const img = new Image(), rd = new FileReader();
+    rd.onload = () => { img.src = rd.result; };
+    rd.onerror = () => bad(new Error("Не удалось прочитать фото"));
+    img.onload = () => {
+      const k = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement("canvas");
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); ok(c.toDataURL("image/jpeg", .8));
+    };
+    img.onerror = () => bad(new Error("Нужна фотография"));
+    rd.readAsDataURL(file);
+  });
+}
+
+// ---------- статус заказа ----------
+const ICON = { new: "⏳", accepted: "👨‍🍳", ready: "✅", done: "🎉", rejected: "😔", cancelled: "✖️" };
+function stopPoll() { clearTimeout(S.timer); S.timer = null; }
+async function openOrder(code) {
+  stopPoll(); S.view = "order"; renderBar();
+  const d = await api("order/get", { code }).catch(e => { toast(e.message, true); return null; });
+  if (!d) return S.branch ? loadMenu() : pickBranch(true);
+  if (S.view !== "order") return;
+  const o = d.order; S.order = o;
+  const steps = ["new", "accepted", "ready", "done"], at = steps.indexOf(o.status);
+  const readyText = o.kind === "delivery" ? "В пути" : "Готов";
+  const title = o.status === "ready" ? (o.kind === "delivery" ? "Курьер в пути" : "Готов — можно забирать") : o.status_text;
+  $app.innerHTML = `<button class="back" id="back">← Меню</button>
+    <div class="card status"><div class="big">${ICON[o.status]}</div><h1>${esc(title)}</h1>
+      <div class="num">Заказ ${o.number ? `№ ${o.number}` : esc(o.code)}${o.table_no ? ` · стол ${esc(o.table_no)}` : ""}</div>
+      ${o.reason ? `<p class="hint">${esc(o.reason)}</p>` : ""}
+      ${at >= 0 ? `<div class="steps">${steps.map((s, i) => `<i class="${i <= at ? "on" : ""}"></i>`).join("")}</div>
+        <div class="steps-l"><span>Отправлен</span><span>Готовится</span><span>${readyText}</span><span>Выдан</span></div>` : ""}
+      ${o.status === "new" ? `<p class="hint">Кассир скоро подтвердит заказ${o.total >= 3000 ? " — может позвонить для уточнения" : ""}.</p>` : ""}
+      ${o.status === "done" && o.bonus_earned ? `<p class="earn">+${money(o.bonus_earned)} бонусами начислено</p>` : ""}
+    </div>
+    ${o.pay === "transfer" && !o.paid && ["new", "accepted", "ready"].includes(o.status) ? `<div class="card" style="text-align:center">
+      <h3>Перевод ${money(o.total)}</h3>${o.branch.qr ? `<img class="qr" src="${esc(o.branch.qr)}" alt="QR для перевода">` : ""}
+      ${o.branch.pay_note ? `<p class="hint">${esc(o.branch.pay_note)}</p>` : ""}
+      <p class="hint">${o.has_check ? "✅ Чек прикреплён — кассир проверит поступление." : "После перевода прикрепите чек:"}</p>
+      <label class="btn2"><input type="file" accept="image/*" id="att" hidden>📎 ${o.has_check ? "Заменить чек" : "Прикрепить чек"}</label></div>` : ""}
+    ${o.pay === "transfer" && o.paid ? `<div class="card"><span class="earn">✅ Оплата получена</span></div>` : ""}
+    <div class="card"><h3>Состав</h3>${o.items.map(i => `<div class="row"><span>${esc(i.name)} × ${i.qty}</span><span>${money(i.price * i.qty)}</span></div>`).join("")}
+      ${o.delivery_fee ? `<div class="row"><span class="m">Доставка</span><span>${money(o.delivery_fee)}</span></div>` : ""}
+      ${o.bonus_spent ? `<div class="row"><span class="m">Бонусами</span><span class="minus">−${money(o.bonus_spent)}</span></div>` : ""}
+      <div class="row total"><span>${o.paid ? "Оплачено" : "К оплате"}</span><span>${money(o.total)}</span></div>
+      ${o.address ? `<p class="hint">📍 ${esc(o.address)}</p>` : ""}${o.want_time ? `<p class="hint">🕐 ${esc(o.want_time)}</p>` : ""}
+    </div>
+    ${o.branch.phone ? `<a class="btn2" href="tel:${esc(o.branch.phone.replace(/[^\d+]/g, ""))}">📞 Позвонить в ${esc(o.branch.name)}</a>` : ""}
+    ${o.status === "new" && ls.get(K.token, null) ? `<button class="btn2 red" id="cancel">Отменить заказ</button>` : ""}
+    ${["done", "rejected", "cancelled"].includes(o.status) ? `<button class="btn2" id="again">🔁 Повторить заказ</button>` : ""}`;
+  document.getElementById("back").onclick = () => { stopPoll(); S.branch ? loadMenu() : pickBranch(true); };
+  document.getElementById("att")?.addEventListener("change", e => run(async () => {
+    if (!e.target.files[0]) return;
+    await api("order/check", { code: o.code, image: await shrink(e.target.files[0]) }); toast("Чек прикреплён"); openOrder(o.code);
+  }));
+  document.getElementById("cancel")?.addEventListener("click", () => run(async () => {
+    if (!confirm("Отменить заказ?")) return;
+    await api("order/cancel", { code: o.code, token: ls.get(K.token, null) }); await loadMe(); openOrder(o.code);
+  }));
+  document.getElementById("again")?.addEventListener("click", () => run(() => repeat(o)));
+  if (["new", "accepted", "ready"].includes(o.status)) S.timer = setTimeout(() => openOrder(o.code), 6000);
+  else if (o.status === "done") loadMe();
+}
+async function repeat(o) {
+  S.branch = S.pub.branches.find(b => b.id === o.branch.id) || S.branch;
+  await loadMenu();
+  let miss = 0;
+  o.items.forEach(i => product(i.id) ? (S.cart[i.id] = (S.cart[i.id] || 0) + i.qty) : miss++);
+  saveCart();
+  if (miss) toast("Некоторых блюд сейчас нет в меню", true);
+  if (count()) showCheckout();
+}
+
+// ---------- бонусы и история ----------
+const KIND = { earn: "Кэшбэк", spend: "Оплата бонусами", refund: "Возврат", welcome: "За первый заказ",
+  referral: "Пригласили друга", manual: "Подарок", expire: "Сгорели" };
+async function showProfile() {
+  stopPoll(); S.view = "profile"; renderBar();
+  await loadMe();
+  const c = S.me?.client, r = S.pub.rules, codes = ls.get(K.orders, []);
+  if (!c) {
+    $app.innerHTML = `<button class="back" id="back">← Меню</button>
+      <div class="bal"><span>Бонусы</span><b>${r.welcome_bonus ? "+" + money(r.welcome_bonus) : pct(r.base_pct)}</b>
+      ${r.welcome_bonus ? "за первый заказ, " : ""}дальше ${pct(r.base_pct)} с каждого заказа бонусами.<br>Бонусный счёт появится после первого заказа — по номеру телефона.</div>
+      ${codes.length ? `<div class="card"><h3>Мои заказы</h3><div id="ol"></div></div>` : ""}`;
+    document.getElementById("back").onclick = () => S.branch ? showMenu() : pickBranch(true);
+    if (codes.length) fillCodes(codes);
+    return;
+  }
+  const link = location.origin + "/?ref=" + c.ref_code;
+  $app.innerHTML = `<button class="back" id="back">← Меню</button>
+    <div class="bal"><span>Ваши бонусы · ${esc(c.name || c.phone)}</span><b>${money(c.balance)}</b>
+      Оплачивайте ими до ${pct(r.max_spend_pct)} заказа. Кэшбэк ${pct(r.base_pct)}${r.happy_from ? `, ×${r.happy_mult} с ${esc(r.happy_from)} до ${esc(r.happy_to)}` : ""}.
+      ${c.trusted ? "" : "<br><small>Тратить бонусы можно после первого полученного заказа с этого телефона.</small>"}</div>
+    ${r.referral_bonus ? `<div class="ref"><b>Пригласите друга — +${money(r.referral_bonus)} вам</b>
+      Когда друг получит первый заказ по вашей ссылке${r.welcome_bonus ? `, а он сам получит +${money(r.welcome_bonus)}` : ""}.
+      <button class="btn2" id="share">📤 Отправить ссылку</button></div>` : ""}
+    <div class="card"><h3>Мои заказы</h3>${S.me.orders.length ? S.me.orders.map(ordRow).join("") : `<div class="hint">Пока нет заказов</div>`}</div>
+    ${S.me.bonus.length ? `<div class="card hist"><h3>История бонусов</h3>${S.me.bonus.map(h => `<div class="row">
+      <span>${KIND[h.kind] || h.kind}${h.note ? ` <span class="m">· ${esc(h.note)}</span>` : ""}<br><span class="m">${fmtDate(h.created)}</span></span>
+      <span class="${h.amount > 0 ? "plus" : "minus"}">${h.amount > 0 ? "+" : ""}${h.amount}</span></div>`).join("")}</div>` : ""}`;
+  document.getElementById("back").onclick = () => S.branch ? showMenu() : pickBranch(true);
+  document.getElementById("share")?.addEventListener("click", async () => {
+    const text = `Заказываю здесь еду — по ссылке получишь бонусы на первый заказ: ${link}`;
+    if (navigator.share) { try { await navigator.share({ text, url: link }); } catch (e) {} }
+    else { try { await navigator.clipboard.writeText(link); toast("Ссылка скопирована"); } catch (e) { prompt("Ссылка:", link); } }
+  });
+  bindOrders();
+}
+const fmtDate = s => { const d = new Date(s); return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" }) + " " + s.slice(11, 16); };
+const ordRow = o => `<button class="ord" data-code="${esc(o.code)}"><span>${fmtDate(o.created)} · ${money(o.total)}
+  <small>${esc(o.branch.name)} · ${o.items.length} поз.</small></span>
+  <span class="badge ${o.status === "done" ? "g" : ["rejected", "cancelled"].includes(o.status) ? "r" : ""}">${esc(o.status_text)}</span></button>`;
+function bindOrders() { document.querySelectorAll("[data-code]").forEach(el => el.onclick = () => run(() => openOrder(el.dataset.code))); }
+async function fillCodes(codes) {
+  const rows = [];
+  for (const code of codes.slice(0, 8)) { const d = await api("order/get", { code }).catch(() => null); if (d) rows.push(ordRow(d.order)); }
+  const box = document.getElementById("ol"); if (box) { box.innerHTML = rows.join(""); bindOrders(); }
+}
+
+// ---------- выбор филиала ----------
+function pickBranch(force) {
+  const bg = document.createElement("div"); bg.className = "sheet-bg";
+  bg.innerHTML = `<div class="sheet"><h3>Выберите филиал</h3>${S.pub.branches.map(b => `<button class="opt ${S.branch?.id === b.id ? "on" : ""}" data-b="${b.id}">
+    <span class="dot"></span><span>${esc(b.name)}<small>${esc(b.address)}${b.address ? " · " : ""}${b.open ? "открыто" : `с ${esc(b.open_from)} до ${esc(b.open_to)}`}${b.delivery ? " · доставка" : ""}</small></span></button>`).join("")
+    || `<div class="empty">Филиалы скоро появятся</div>`}</div>`;
+  document.body.appendChild(bg);
+  if (!force) bg.onclick = e => { if (e.target === bg) bg.remove(); };
+  bg.querySelectorAll("[data-b]").forEach(el => el.onclick = () => run(async () => {
+    S.branch = S.pub.branches.find(b => b.id === +el.dataset.b); bg.remove(); await loadMenu(); window.scrollTo(0, 0);
+  }));
+}
+document.getElementById("branch-btn").onclick = () => { if (!TABLE && S.pub) pickBranch(!S.branch); };
+document.getElementById("bonus-chip").onclick = () => S.pub && run(showProfile);
+document.addEventListener("visibilitychange", () => { if (!document.hidden && S.view === "order" && S.order) openOrder(S.order.code); });
+run(boot);
+</script>
+</body>
+</html>
