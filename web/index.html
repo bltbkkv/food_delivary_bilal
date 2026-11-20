@@ -30,7 +30,7 @@ header .in { max-width: 640px; margin: 0 auto; display: flex; align-items: cente
 .branch-btn b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 .bonus-chip { background: rgba(200, 150, 46, .18); color: var(--gold); border-radius: 20px; padding: 7px 12px;
   font-weight: 700; font-size: 14px; white-space: nowrap; }
-.cats { position: sticky; top: 58px; z-index: 10; background: var(--bg); display: flex; gap: 8px; overflow-x: auto;
+.cats { position: sticky; top: var(--hh, 58px); z-index: 10; background: var(--bg); display: flex; gap: 8px; overflow-x: auto;
   padding: 10px 16px; margin: 0 -16px; scrollbar-width: none; }
 .cats::-webkit-scrollbar, .promos::-webkit-scrollbar { display: none; }
 .cats button { flex: 0 0 auto; padding: 8px 14px; border-radius: 20px; background: var(--card); font-weight: 600;
@@ -524,6 +524,8 @@ function pickBranch(force) {
 document.getElementById("branch-btn").onclick = () => { if (!TABLE && S.pub) pickBranch(!S.branch); };
 document.getElementById("bonus-chip").onclick = () => S.pub && run(showProfile);
 document.addEventListener("visibilitychange", () => { if (!document.hidden && S.view === "order" && S.order) openOrder(S.order.code); });
+const fitHeader = () => document.documentElement.style.setProperty("--hh", document.querySelector("header").offsetHeight + "px");
+fitHeader(); window.addEventListener("resize", fitHeader);
 run(boot);
 </script>
 </body>
